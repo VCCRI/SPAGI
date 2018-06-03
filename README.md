@@ -13,25 +13,27 @@ This file contains the R code to run an example workflow for active pathway iden
 
 All the necessary data to run the example workflow are deposited in the *SPAGI* github repository <https://github.com/VCCRI/SPAGI/tree/master/data>. These data are automatically loaded with the package. This may take some time during installation.
 
-The package depends on another package *data.table* for fast string matching function *chmatch*.
-
 Please note that the query RNA-seq gene expression data should be in RPKM/FPKM/CPM and log normalized form. Also the gene ids must be official gene symbols as our background data sets are oficial gene symbols. The package assumes that all the query RNA-seq data are in normalized form and the gene ids are official gene symbols. Also you need an expression cutoff threshold and high expression threshold (generally a value &gt; expression value of the peak of distribution) for your query RNA-seq gene expression data.
 
 Installation
 ------------
 
-Make sure you have installed the packages *devtools* and *data.table*, the commands to do so are as follows:
+*SPAGI* depends on one package *data.table*. To generate the background pathway path data it relies on packages *STRINGdb* and *igraph*. Make sure you have installed all the packages. The commands to do so are as follows:
 
 Open an R session and do the following:
 
 ``` r
-install.packages('devtools')
+source("http://bioconductor.org/biocLite.R")
+biocLite("STRINGdb")
+
 install.packages('data.table')
+install.packages('igraph')
 ```
 
-Then install the *SPAGI* package from github repository:
+Make sure you have *devtools* installed, then install the *SPAGI* package from github repository:
 
 ``` r
+install.packages('devtools')
 devtools::install_github('VCCRI/SPAGI')
 ```
 
@@ -46,6 +48,7 @@ library(spagi)
 Package installation and loading is done!
 
 You are now ready to run the example.
+
 You can run the entire following example using:
 
 ``` r
