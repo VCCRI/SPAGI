@@ -81,7 +81,7 @@ ROR1.active.pathway<-identify_active_pathway_path(pathway.path = pathway.path, p
 After getting the active pathway paths, you can save the data in csv file format where each row will denote a path and all the paths starting from the same source comprises of a pathway of the source protein.
 
 ``` r
-lapply(unlist(ROR1.active.pathway$query_data, recursive = F, use.names = F), write, "ROR1.active.pathway.csv", append=T, ncolumns=10)
+lapply(unlist(ROR1.active.pathway$ROR1_LEC, recursive = F, use.names = F), write, "ROR1.active.pathway.csv", append=T, ncolumns=10)
 ```
 
 ### Get active pathway ranking metric
