@@ -1,5 +1,5 @@
 #########################################################################################
-#' @title SPAGI: Signalling Pathway Analysis for putative Gene regulatory network Identification
+#' @title SPAGI: Identification of active signalling pathways by integrating gene expression and protein interaction network
 #'
 #' @description SPAGI is an R package for active pathway identification for RNA-seq gene expression profiles. This package contains the neccessary R code to run SPAGI as described in "SPAGI: Identification of active signalling pathways using RNA-seq gene expression profiles". SPAGI is implemented within a helpful framework to identify active pathway paths from RNA-seq gene expression profiles.
 #'
@@ -17,14 +17,16 @@
 #' ## Also we will use "ROR1.data" as query RNA-seq gene expression data. This data is for ocular lens epithelial cell differentiated from human pluripotent stem cells.
 #' ## These data sets are loaded automatically with the package.
 #'
-#' ## Pre-process the query data (ROR1.data), the data has already been made in CPM and log2 normalized format.
+#' ## Pre-process the query data (ROR1.data), the data has already been made in CPM and log2 normalized format. Also we have already made the replicate names same for the data.
 #' ROR1.processed.data<-preprocess_querydata(cell.tissue.data = ROR1.data, exp.cutoff.th = 1.8)
 #' ## Identify active pathway paths of the processed query data
 #' ROR1.active.pathway<-identify_active_pathway_path(pathway.path = pathway.path, processed.query.data = ROR1.processed.data)
-#' ## Get active pathway ranking metric
-#' ROR1.active.pathway.ranking.metric<-get_active_pathway_ranking_metric(active.pathway.path = ROR1.active.pathway, processed.query.data = ROR1.processed.data, high.exp.th = 7)
-#' ## Display top n pathways
-#' display_top_ranked_pathways(pathway.ranking.metric = ROR1.active.pathway.ranking.metric)
+#' ## Get active pathway ranking metric (i.e., activity score and number of downstream transcription factors)
+#' ROR1.active.pathway.ranking.metric<-get_pathway_ranking_metric(active.pathway.path = ROR1.active.pathway, processed.query.data = ROR1.processed.data, high.exp.th = 7)
+#' ## Plot the ranking metric result (i.e., activity score and number of downstream transcription factors) in a 2D plane
+#' display_pathway_ranking_metric(pathway.ranking.metric = ROR1.active.pathway.ranking.metric)
+#' ## To separate the top ranked pathways we can do this
+#' abline(v=45, h=0.2, lty=2, col="black")
 #'
 NULL
 ########################################################################################
@@ -208,7 +210,7 @@ format_matrix_data<-function(matrix.data, experiment.descriptor = colnames(matri
 #'
 #' @return This function returns a list with specifically expressed genes for each cell type / tissue
 #'
-#' @param cell.tissue.data A matrix containing cell type / tissue RNA-seq gene expression data. It is assumed that all query data are in RPKM/FPKM/CPM and log normalized form. Also assume that gene ids are official gene symbols. For the matrix, rows denote the genes and the columns denote the cell types or tissues. Duplicate column names are expected in this case denoting replicate samples. All the replicate samples for a specific cell or tissue should have identical column names, otherwise the experiment.descriptor parameter should be used to identify replicate samples of a specific cell type or tissue.
+#' @param cell.tissue.data An expression matrix with replicated column headers per-replicate. It is assumed that all query data are in RPKM/FPKM/CPM and log normalized form. Also assume that gene ids are official gene symbols. For the matrix, rows denote the genes and the columns denote the cell types or tissues. Duplicate column names are expected in this case denoting replicate samples. All the replicate samples for a specific cell or tissue should have identical column names, otherwise the experiment.descriptor parameter should be used to identify replicate samples of a specific cell type or tissue.
 #' @param exp.cutoff.th An expression cut-off threshold value for the query data.
 #' @param species The species abbreviation of the query data (cell.tissue.data). Default is "hsapiens".
 #' @param data.format Format of cell.tissue.data. Default is "matrix".
@@ -302,7 +304,7 @@ preprocess_querydata<-function(cell.tissue.data, exp.cutoff.th, species = "hsapi
 #' ## Also we will use "ROR1.data" as query RNA-seq gene expression data. This data is for ocular lens epithelial cell differentiated from human pluripotent stem cells.
 #' ## These data sets are loaded automatically with the package.
 #'
-#' ## Pre-process the query data (ROR1.data), the data has already been made in CPM and log2 normalized format.
+#' ## Pre-process the query data (ROR1.data), the data has already been made in CPM and log2 normalized format. Also we have already made the replicate names same for the data.
 #' ROR1.processed.data<-preprocess_querydata(cell.tissue.data = ROR1.data, exp.cutoff.th = 1.8)
 #' ## Identify active pathway paths of the processed query data
 #' ROR1.active.pathway<-identify_active_pathway_path(pathway.path = pathway.path, processed.query.data = ROR1.processed.data)
@@ -367,23 +369,23 @@ identify_active_pathway_path<-function(pathway.path, processed.query.data){
 
 ################################################################################################
 # rank the active pathways based on their active (i.e., highly expressed) gene count proportion
-# generate a list of pathways' ranking metric where each sublist corresponds for each cell/tissue type
+# generate a list of pathways' activity score where each sublist corresponds for each cell/tissue type
 
-#' @title get_active_pathway_ranking_metric
+#' @title get_pathway_activity_score
 #'
 #' @description
-#' This function generates active pathway ranking metric for each cell/tissue type. It uses active pathway path and processed query data with a high expression threshold to generate the ranking metric.
+#' This function generates pathway activity score of the active pathways for each cell/tissue type. It uses active pathway path and processed query data with a high expression threshold to generate the ranking metric.
 #'
-#' @rdname get_active_pathway_ranking_metric
-#' @name get_active_pathway_ranking_metric
+#' @rdname get_pathway_activity_score
+#' @name get_pathway_activity_score
 #'
 #' @details
-#' This function generates active pathway ranking metric for each cell/tissue type. It uses active pathway path and processed query data with a high expression threshold to generate the ranking metric.
+#' This function generates pathway activity score of the active pathways for each cell/tissue type. It uses active pathway path and processed query data with a high expression threshold to generate the ranking metric.
 #'
-#' @return This function returns a list of pathways' ranking metric for each cell/tissue type.
+#' @return This function returns a list of pathway activity score for each cell/tissue type.
 #'
-#' @param active.pathway.path A list of active pathway path data for each cell/tissue type.
-#' @param processed.query.data A list with expressed query data where each sublist corresponds for each cell/tissue type.
+#' @param active.pathway.path A list of active pathway path data for each cell/tissue type as returned by the function 'identify_active_pathway_path'.
+#' @param processed.query.data A list with expressed query data where each sublist corresponds for each cell/tissue type as returned by the function 'preprocess_querydata'.
 #' @param high.exp.th A high expression threshold value for the processed query data. It is used to get active (i.e., highly expressed) molecule proportion for each pathway path.
 #'
 #' @export
@@ -393,18 +395,18 @@ identify_active_pathway_path<-function(pathway.path, processed.query.data){
 #' ## Also we will use "ROR1.data" as query RNA-seq gene expression data. This data is for ocular lens epithelial cell differentiated from human pluripotent stem cells.
 #' ## These data sets are loaded automatically with the package.
 #'
-#' ## Pre-process the query data (ROR1.data), the data has already been made in CPM and log2 normalized format.
+#' ## Pre-process the query data (ROR1.data), the data has already been made in CPM and log2 normalized format. Also we have already made the replicate names same for the data.
 #' ROR1.processed.data<-preprocess_querydata(cell.tissue.data = ROR1.data, exp.cutoff.th = 1.8)
 #' ## Identify active pathway paths of the processed query data
 #' ROR1.active.pathway<-identify_active_pathway_path(pathway.path = pathway.path, processed.query.data = ROR1.processed.data)
-#' ## Get active pathway ranking metric
-#' ROR1.active.pathway.ranking.metric<-get_active_pathway_ranking_metric(active.pathway.path = ROR1.active.pathway, processed.query.data = ROR1.processed.data, high.exp.th = 7)
-#' head(sort(unlist(ROR1.active.pathway.ranking.metric$ROR1_LEC), decreasing=T))
+#' ## Get activity score of the active pathways
+#' ROR1.pathway.activity.score<-get_pathway_activity_score(active.pathway.path = ROR1.active.pathway, processed.query.data = ROR1.processed.data, high.exp.th = 7)
+#' head(ROR1.pathway.activity.score$ROR1_LEC)
 #'
 
-get_active_pathway_ranking_metric<-function(active.pathway.path, processed.query.data, high.exp.th){
+get_pathway_activity_score<-function(active.pathway.path, processed.query.data, high.exp.th){
   ##process separately each cell/tissue to get active pathway ranking metric
-  active.pathway.ranking<-list()
+  pathway.activity.score<-list()
   for(i in 1:length(active.pathway.path)){
     #get each cell/tissue active pathway paths
     each.cell.active.pathway.path<-active.pathway.path[[i]]
@@ -429,10 +431,10 @@ get_active_pathway_ranking_metric<-function(active.pathway.path, processed.query
     ##
 
     #assign average active gene count proportion for each cell/tissue
-    active.pathway.ranking[[tmp.cell.name]]<-pathway.path.active.gene.count.proportion
+    pathway.activity.score[[tmp.cell.name]]<-unlist(pathway.path.active.gene.count.proportion)
   }
   #return average active gene count proportion for all cell/tissue
-  return(active.pathway.ranking)
+  return(pathway.activity.score)
   ##
 }
 ################################################################################################
@@ -444,24 +446,144 @@ get_active_pathway_ranking_metric<-function(active.pathway.path, processed.query
 
 
 
-################################################################################################
-# display the sorted top n ranked pathways for each cell type or tissue
 
-#' @title display_top_ranked_pathways
+##################################################################################################
+#####get each pathway number of downstream transcription factors for each cell type
+
+#' @title get_pathway_downstream_tf_number
 #'
 #' @description
-#' This function displays the sorted top n ranked pathways for each cell type or tissue in a barplot.
+#' This function calculates the number of downstrean transcription factors of each active pathway for each cell/tissue type. It uses the active pathway path object to calculate the number of downstrean transcription factor.
 #'
-#' @rdname display_top_ranked_pathways
-#' @name display_top_ranked_pathways
+#' @rdname get_pathway_downstream_tf_number
+#' @name get_pathway_downstream_tf_number
 #'
 #' @details
-#' This function displays the sorted top n ranked pathways for each cell type or tissue in a barplot.
+#' This function calculates the number of downstrean transcription factors of each active pathway for each cell/tissue type. It uses the active pathway path object to calculate the number of downstrean transcription factor.
+#'
+#' @return This function returns a list of number of downstrean transcription factors for each cell/tissue type.
+#'
+#' @param active.pathway.path A list of active pathway path data for each cell/tissue type as returned by the function 'identify_active_pathway_path'.
+#'
+#' @export
+#'
+#' @examples
+#' ## Here we will use "pathway.path" as background data from the SPAGI repository.
+#' ## Also we will use "ROR1.data" as query RNA-seq gene expression data. This data is for ocular lens epithelial cell differentiated from human pluripotent stem cells.
+#' ## These data sets are loaded automatically with the package.
+#'
+#' ## Pre-process the query data (ROR1.data), the data has already been made in CPM and log2 normalized format. Also we have already made the replicate names same for the data.
+#' ROR1.processed.data<-preprocess_querydata(cell.tissue.data = ROR1.data, exp.cutoff.th = 1.8)
+#' ## Identify active pathway paths of the processed query data
+#' ROR1.active.pathway<-identify_active_pathway_path(pathway.path = pathway.path, processed.query.data = ROR1.processed.data)
+#' ## Get the number of downstream transcription factors of the active pathways
+#' ROR1.pathway.downstream.tf.count<-get_pathway_downstream_tf_number(active.pathway.path = ROR1.active.pathway)
+#' head(ROR1.pathway.downstream.tf.count$ROR1_LEC)
+#'
+
+get_pathway_downstream_tf_number<-function(active.pathway.path){
+  ##get each pathway number of downstream transcription factors for each cell type
+  pathway.downstream.tf.count<-lapply(active.pathway.path, function(y){
+    #here, y is each cell type pathway path
+    tmp.downstream.tf.count<-lapply(y, function(x){
+      #here x is each pathway for that cell type
+      return(length(x))
+    })
+    return(unlist(tmp.downstream.tf.count))
+  })
+  return(pathway.downstream.tf.count)
+  ##
+}
+##################################################################################################
+
+
+
+
+
+
+
+
+
+################################################################################################
+# Get each pathway activity score based on their active (i.e., highly expressed) gene count proportion for each cell/tissue type
+# Also get the number of pathways downstream transcription factors for each cell/tissue type
+
+#' @title get_pathway_ranking_metric
+#'
+#' @description
+#' This function generates pathway activity score and number of downstream transcription factors of the active pathways for each cell/tissue type. It uses active pathway path and processed query data with a high expression threshold to generate the activity score. However, it uses only the active pathway path data to calculate the number of downstream transcription factors.
+#'
+#' @rdname get_pathway_ranking_metric
+#' @name get_pathway_ranking_metric
+#'
+#' @details
+#' This function generates pathway activity score and number of downstream transcription factors of the active pathways for each cell/tissue type. It uses active pathway path and processed query data with a high expression threshold to generate the activity score. However, it uses only the active pathway path data to calculate the number of downstream transcription factors.
+#'
+#' @return This function returns a list of sublist with pathway activity score and the number of downstream transcription factors for each cell/tissue type.
+#'
+#' @param active.pathway.path A list of active pathway path data for each cell/tissue type as returned by the function 'identify_active_pathway_path'.
+#' @param processed.query.data A list with expressed query data where each sublist corresponds for each cell/tissue type as returned by the function 'preprocess_querydata'.
+#' @param high.exp.th A high expression threshold value for the processed query data. It is used to get active (i.e., highly expressed) molecule proportion for each pathway path.
+#'
+#' @export
+#'
+#' @examples
+#' ## Here we will use "pathway.path" as background data from the SPAGI repository.
+#' ## Also we will use "ROR1.data" as query RNA-seq gene expression data. This data is for ocular lens epithelial cell differentiated from human pluripotent stem cells.
+#' ## These data sets are loaded automatically with the package.
+#'
+#' ## Pre-process the query data (ROR1.data), the data has already been made in CPM and log2 normalized format. Also we have already made the replicate names same for the data.
+#' ROR1.processed.data<-preprocess_querydata(cell.tissue.data = ROR1.data, exp.cutoff.th = 1.8)
+#' ## Identify active pathway paths of the processed query data
+#' ROR1.active.pathway<-identify_active_pathway_path(pathway.path = pathway.path, processed.query.data = ROR1.processed.data)
+#' ## Get active pathway ranking metric (i.e., activity score and number of downstream transcription factors)
+#' ROR1.active.pathway.ranking.metric<-get_pathway_ranking_metric(active.pathway.path = ROR1.active.pathway, processed.query.data = ROR1.processed.data, high.exp.th = 7)
+#' head(ROR1.active.pathway.ranking.metric$activity.score$ROR1_LEC)
+#' head(ROR1.active.pathway.ranking.metric$downstream.tf.count$ROR1_LEC)
+#'
+
+get_pathway_ranking_metric<-function(active.pathway.path, processed.query.data, high.exp.th){
+  ##First get the activity score of each pathway for each cell/tissue type
+  activity.score<-get_pathway_activity_score(active.pathway.path = active.pathway.path, processed.query.data = processed.query.data, high.exp.th = high.exp.th)
+
+  ##Next get the number of downstream transcription factors of each pathway for each cell/tissue type
+  downstream.tf.count<-get_pathway_downstream_tf_number(active.pathway.path = active.pathway.path)
+
+  ##Finally combine the above results in a list and return
+  pathway.ranking.metric<-list()
+  pathway.ranking.metric[["activity.score"]]<-activity.score
+  pathway.ranking.metric[["downstream.tf.count"]]<-downstream.tf.count
+
+  return(pathway.ranking.metric)
+  ##
+}
+################################################################################################
+
+
+
+
+
+
+
+
+
+################################################################################################
+# plot the pathway ranking metric result in a 2D plane for each cell type or tissue
+
+#' @title display_pathway_ranking_metric
+#'
+#' @description
+#' This function plots the pathway ranking metric for each cell type or tissue in a 2D plane.
+#'
+#' @rdname display_pathway_ranking_metric
+#' @name display_pathway_ranking_metric
+#'
+#' @details
+#' This function plots the pathway ranking metric for each cell type or tissue in a 2D plane.
 #'
 #' @return NULL
 #'
-#' @param pathway.ranking.metric The ranking metric result returned by 'get_active_pathway_ranking_metric' function.
-#' @param top.n.pathway An integer number of how many top ranked pathways will be displayed. Default is 50.
+#' @param pathway.ranking.metric The ranking metric result returned by 'get_pathway_ranking_metric' function.
 #'
 #' @export
 #'
@@ -474,29 +596,38 @@ get_active_pathway_ranking_metric<-function(active.pathway.path, processed.query
 #' ROR1.processed.data<-preprocess_querydata(cell.tissue.data = ROR1.data, exp.cutoff.th = 1.8)
 #' ## Identify active pathway paths of the processed query data
 #' ROR1.active.pathway<-identify_active_pathway_path(pathway.path = pathway.path, processed.query.data = ROR1.processed.data)
-#' ## Get active pathway ranking metric
-#' ROR1.active.pathway.ranking.metric<-get_active_pathway_ranking_metric(active.pathway.path = ROR1.active.pathway, processed.query.data = ROR1.processed.data, high.exp.th = 7)
-#' ## Display top n pathways
-#' display_top_ranked_pathways(pathway.ranking.metric = ROR1.active.pathway.ranking.metric)
+#' ## Get active pathway ranking metric (i.e., activity score and number of downstream transcription factors)
+#' ROR1.active.pathway.ranking.metric<-get_pathway_ranking_metric(active.pathway.path = ROR1.active.pathway, processed.query.data = ROR1.processed.data, high.exp.th = 7)
+#' ## Plot the ranking metric result (i.e., activity score and number of downstream transcription factors) in a 2D plane
+#' display_pathway_ranking_metric(pathway.ranking.metric = ROR1.active.pathway.ranking.metric)
+#' ## To separate the top ranked pathways we can do this
+#' abline(v=45, h=0.2, lty=2, col="black")
 #'
 
-display_top_ranked_pathways<-function(pathway.ranking.metric, top.n.pathway=50){
-  #in each loop, the result of one query cell/tissue type is processed and showed in the bar plot
-  for(i in 1:length(pathway.ranking.metric)){
-    cell.tissue.names<-names(pathway.ranking.metric[i])
-    #sort the pathway based on the ranking value
-    individual.sorted.pathway<-sort(unlist(pathway.ranking.metric[[i]]), decreasing = T)
+display_pathway_ranking_metric<-function(pathway.ranking.metric){
+  #in each loop, the result of one query cell/tissue type is processed and plotted in a 2D plane
+  for(i in 1:length(pathway.ranking.metric$activity.score)){
+    #get the name of each cell type
+    cell.tissue.names<-names(pathway.ranking.metric$activity.score[i])
 
-    #for setting the title
+    ##for setting the title
     if(nchar(cell.tissue.names)>40){
-      title<-paste("Pathway ranking of:\n", cell.tissue.names, sep = " ")
+      title<-paste("The result of:\n", cell.tissue.names, sep = " ")
     }
     else{
-      title<-paste("Pathway ranking of", cell.tissue.names, sep = " ")
+      title<-paste("The result of", cell.tissue.names, sep = " ")
     }
+    ##
 
-    #taking reverse of the negative log10 p-values and displayed in the bar plot
-    barplot(individual.sorted.pathway[1:top.n.pathway], main = title, xlab = "Ranking metric", las=2, horiz=TRUE, cex.names = 0.5)
+
+    ##plot the result in a 2D plane - number of downstream TF in x axis and activity score in y axis
+    plot(pathway.ranking.metric$downstream.tf.count[[i]], pathway.ranking.metric$activity.score[[i]],
+         xlim = c(0,200), ylim = c(0,1.0), type= "n", bty="n", main = title,
+         xlab = "Number of downstream transcription factor", ylab = "Pathway activity score")
+    text(pathway.ranking.metric$downstream.tf.count[[i]], pathway.ranking.metric$activity.score[[i]],
+         names(pathway.ranking.metric$downstream.tf.count[[i]]), cex = 0.5, col ="black")
+    ##
+
 
     #for console message for each cell/tissue type ploting
     consol.msg<-paste(cell.tissue.names, "-- result plotting done!!", sep = " ")
@@ -504,6 +635,8 @@ display_top_ranked_pathways<-function(pathway.ranking.metric, top.n.pathway=50){
   }
 }
 #####################################################################################################
+
+
 
 
 

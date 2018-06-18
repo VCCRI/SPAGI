@@ -25,7 +25,7 @@ This function identifies active pathway paths for RNA-seq gene expression profil
 ## Also we will use "ROR1.data" as query RNA-seq gene expression data. This data is for ocular lens epithelial cell differentiated from human pluripotent stem cells.
 ## These data sets are loaded automatically with the package.
 
-## Pre-process the query data (ROR1.data), the data has already been made in CPM and log2 normalized format.
+## Pre-process the query data (ROR1.data), the data has already been made in CPM and log2 normalized format. Also we have already made the replicate names same for the data.
 ROR1.processed.data<-preprocess_querydata(cell.tissue.data = ROR1.data, exp.cutoff.th = 1.8)
 ## Identify active pathway paths of the processed query data
 ROR1.active.pathway<-identify_active_pathway_path(pathway.path = pathway.path, processed.query.data = ROR1.processed.data)

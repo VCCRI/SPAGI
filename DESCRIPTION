@@ -1,6 +1,6 @@
 Package: spagi
 Type: Package
-Title: SPAGI: Signalling Pathway Analysis for putative Gene regulatory network Identification
+Title: SPAGI: Identification of active signalling pathways by integrating gene expression and protein interaction network
 Version: 0.1.0
 Author: Md Humayun Kabir
 Maintainer: Md Humayun Kabir <humayun.mkabir@gmail.com>

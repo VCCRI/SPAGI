@@ -8,7 +8,7 @@ preprocess_querydata(cell.tissue.data, exp.cutoff.th, species = "hsapiens",
   data.format = "matrix", experiment.descriptor = NULL)
 }
 \arguments{
-\item{cell.tissue.data}{A matrix containing cell type / tissue RNA-seq gene expression data. It is assumed that all query data are in RPKM/FPKM/CPM and log normalized form. Also assume that gene ids are official gene symbols. For the matrix, rows denote the genes and the columns denote the cell types or tissues. Duplicate column names are expected in this case denoting replicate samples. All the replicate samples for a specific cell or tissue should have identical column names, otherwise the experiment.descriptor parameter should be used to identify replicate samples of a specific cell type or tissue.}
+\item{cell.tissue.data}{An expression matrix with replicated column headers per-replicate. It is assumed that all query data are in RPKM/FPKM/CPM and log normalized form. Also assume that gene ids are official gene symbols. For the matrix, rows denote the genes and the columns denote the cell types or tissues. Duplicate column names are expected in this case denoting replicate samples. All the replicate samples for a specific cell or tissue should have identical column names, otherwise the experiment.descriptor parameter should be used to identify replicate samples of a specific cell type or tissue.}
 
 \item{exp.cutoff.th}{An expression cut-off threshold value for the query data.}
 
